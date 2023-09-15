@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions      = [pgcrypto]
+}
+
+model album {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String       @db.VarChar(255)
+  description     String?      @db.VarChar(255)
+  release_date    DateTime     @db.Date
+  organization_id String       @db.Uuid
+  user_id         String       @db.Uuid
+  created_at      DateTime     @default(now()) @db.Timestamp(6)
+  updated_at      DateTime     @default(now()) @db.Timestamp(6)
+  organization    organization @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  album_song      album_song[]
+}
+
+model album_song {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  album_id   String   @db.Uuid
+  song_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  album      album    @relation(fields: [album_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  song       song     @relation(fields: [song_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model organization {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description String?    @db.VarChar(255)
+  name        String     @db.VarChar(255)
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime   @default(now()) @db.Timestamp(6)
+  user_id     String     @db.Uuid
+  tenant_id   String     @db.VarChar(255)
+  album       album[]
+  user        user       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  playlist    playlist[]
+}
+
+model playlist {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String       @db.VarChar(255)
+  description     String?      @db.VarChar(255)
+  organization_id String       @db.Uuid
+  user_id         String       @db.Uuid
+  created_at      DateTime     @default(now()) @db.Timestamp(6)
+  updated_at      DateTime     @default(now()) @db.Timestamp(6)
+  organization    organization @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  song            song[]
+}
+
+model song {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String       @db.VarChar(255)
+  artist      String       @db.VarChar(255)
+  duration    Int
+  genre       String       @db.VarChar(255)
+  playlist_id String       @db.Uuid
+  created_at  DateTime     @default(now()) @db.Timestamp(6)
+  updated_at  DateTime     @default(now()) @db.Timestamp(6)
+  album_song  album_song[]
+  playlist    playlist     @relation(fields: [playlist_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String         @unique @db.VarChar(255)
+  firstName    String?        @db.VarChar(255)
+  lastName     String?        @db.VarChar(255)
+  roq_user_id  String         @db.VarChar(255)
+  tenant_id    String         @db.VarChar(255)
+  created_at   DateTime       @default(now()) @db.Timestamp(6)
+  updated_at   DateTime       @default(now()) @db.Timestamp(6)
+  album        album[]
+  organization organization[]
+  playlist     playlist[]
+}
